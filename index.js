@@ -22,9 +22,9 @@ const token_Line = "jf5yMHmJckGqdVpoFsv2UvDLEPRSYXILS4d8JorraCA";
 //Variable for conection to database
 const db = mysql.createConnection({
   host: "localhost",
-  user: "root",
-  password: "",
-  database: "project_mockup",
+  user: "id19352809_tanachai006",
+  password: "0655068518_Cz",
+  database: "id19352809_tanachai006_db",
 });
 
 //Conection to database
