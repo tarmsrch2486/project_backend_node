@@ -21,10 +21,10 @@ const token_Line = "jf5yMHmJckGqdVpoFsv2UvDLEPRSYXILS4d8JorraCA";
 
 //Variable for conection to database
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "project_mockup",
+  host: "bpif0oz1tr7sofjssyy9-mysql.services.clever-cloud.com",
+  user: "unxlnjtasmh93xfp",
+  password: "EhJnvcihUQQMQTPB9H6w",
+  database: "bpif0oz1tr7sofjssyy9",
 });
 
 //Conection to database
@@ -765,4 +765,4 @@ app.put("/sum_score", (req, res) => {
   // });
 });
 
-app.listen(PORT, () => console.log("Server is running on port 3000"));
+app.listen(PORT, () => console.log("Server is running on port " + PORT));
