@@ -21,10 +21,10 @@ const token_Line = "jf5yMHmJckGqdVpoFsv2UvDLEPRSYXILS4d8JorraCA";
 
 //Variable for conection to database
 const db = mysql.createConnection({
-  host: "bpif0oz1tr7sofjssyy9-mysql.services.clever-cloud.com",
-  user: "unxlnjtasmh93xfp",
-  password: "EhJnvcihUQQMQTPB9H6w",
-  database: "bpif0oz1tr7sofjssyy9",
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "project_mockup",
 });
 
 //Conection to database
@@ -486,7 +486,7 @@ app.get("/course_name", (req, res) => {
 //Delete member
 app.delete("/delete_member/:id", (req, res) => {
   const id = req.params.id;
-  db.query("DELETE FROM member WHERE id = ?", [id], (err, result) => {
+  db.query("DELETE FROM member WHERE reg_id = ?", [id], (err, result) => {
     if (err) {
       res.send(err);
     }
@@ -744,25 +744,6 @@ app.put("/sum_score", (req, res) => {
     );
   }
  
-
-  // db.query(sql_permission, [reg_id], (err, result_2) => {
-  //   console.log(result_2[0].sum_score);
-  //   if (result_2[0].sum_score > 69) {
-
-  //     // db.query(update_book, [last_book_id, reg_id], (err, result_3) => {
-  //     //   if(result_3){
-  //     //     res.send(result_3)
-  //     //     console.log(result_3)
-  //     //   }else{
-  //     //     // res.send(err)
-  //     //   }
-  //     // })
-
-  //   }else{
-  //     console.log('failed')
-  //     return false
-  //   }
-  // });
 });
 
 app.listen(PORT, () => console.log("Server is running on port " + PORT));
