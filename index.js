@@ -177,7 +177,7 @@ app.get("/user_information/:id", (req, res) => {
 app.post("/add_member", upload.single("image"), (req, res) => {
   const reg_day = req.body.reg_day;
   const id_card = req.body.id_card;
-  const reg_id = req.body.reg_id;
+  // const reg_id = req.body.reg_id;
   const name = req.body.name;
   const lastname = req.body.lastname;
   const name_EN = req.body.name_EN;
@@ -199,6 +199,7 @@ app.post("/add_member", upload.single("image"), (req, res) => {
   const amphure = req.body.amphure;
   const district = req.body.district;
   const img = req.file.filename;
+  const count_max_sql = `SELECT MAX(id) +1 AS id  FROM member;`;
 
   const query = `INSERT INTO member (reg_id, id_card, course, candidate, prefix, 
     name, lastname, name_en, lastname_en,nationality, birthday, tel, 
@@ -210,57 +211,64 @@ app.post("/add_member", upload.single("image"), (req, res) => {
     ?, ?, ?, ?, ?,
     ?, ?, ?, ?, ?, 
     ?, ?, ?, ?) `;
+  db.query(count_max_sql, (err, result) => {
+    function padWithLeadingZeros(num, totalLength) {
+      return String(num).padStart(totalLength, "0");
+    }
 
-  bcrypt.hash(id_card, saltRounds, function (err, hash) {
-    db.query(
-      query,
-      [
-        reg_id,
-        hash,
-        course,
-        candidate,
-        prefix,
-        name,
-        lastname,
-        name_EN,
-        lastname_EN,
-        nationality,
-        birthday,
-        tel,
-        email,
-        address,
-        educational,
-        branch,
-        province,
-        amphure,
-        district,
-        gender,
-        permission,
-        receipt,
-        img,
-        reg_day,
-      ],
-      (err, result) => {
-        if (err) {
-          res.send(err);
-          console.log(err);
-        }
-        // ดึง ID ของแถวที่เพิ่ง insert
-        const insertedId = result.insertId;
+    const reg_id = `REG_` + padWithLeadingZeros(result[0].id, 4);
 
-        // สร้างคำสั่ง SQL เพื่อดึงข้อมูลที่เพิ่ง insert
-        const selectSQL = "SELECT * FROM member WHERE id = ?";
-        db.query(selectSQL, [insertedId], (error, rows) => {
-          if (error) {
-            console.error('เกิดข้อผิดพลาดในการดึงข้อมูล: ' + error.message);
-            return;
+    bcrypt.hash(id_card, saltRounds, function (err, hash) {
+      db.query(
+        query,
+        [
+          reg_id,
+          hash,
+          course,
+          candidate,
+          prefix,
+          name,
+          lastname,
+          name_EN,
+          lastname_EN,
+          nationality,
+          birthday,
+          tel,
+          email,
+          address,
+          educational,
+          branch,
+          province,
+          amphure,
+          district,
+          gender,
+          permission,
+          receipt,
+          img,
+          reg_day,
+        ],
+        (err, result) => {
+          if (err) {
+            res.send(err);
+            console.log(err);
           }
-          res.json({ STATUS: "ลงทะเบียนเสร็จสิ้น", rows, id_card: id_card })
-          const text = ` กรุณาใช้ เลขประจำตัวการสอบ: ${rows[0].reg_id} '' เลขบัตรประจำตัวประชาชน: ${id_card} `;
-          notiEvent(token_Line, text)
-        });
-      }
-    );
+          // ดึง ID ของแถวที่เพิ่ง insert
+          const insertedId = result.insertId;
+
+          // สร้างคำสั่ง SQL เพื่อดึงข้อมูลที่เพิ่ง insert
+          const selectSQL = "SELECT * FROM member WHERE id = ?";
+          db.query(selectSQL, [insertedId], (error, rows) => {
+            if (error) {
+              console.error("เกิดข้อผิดพลาดในการดึงข้อมูล: " + error.message);
+              return;
+            }
+            res.json({ STATUS: "ลงทะเบียนเสร็จสิ้น", rows, id_card: id_card });
+            const text = ` กรุณาใช้ เลขประจำตัวการสอบ: ${rows[0].reg_id} '' เลขบัตรประจำตัวประชาชน: ${id_card} `;
+            notiEvent(token_Line, text);
+          });
+        }
+      );
+    });
   });
 });
 
@@ -385,14 +393,18 @@ app.post("/add_admin", (req, res) => {
   const { name, lastname, tel, username, pwd, permission } = req.body;
   const sql =
     "INSERT INTO admin (name, lastname, tel, username, password, permission) VALUES (?, ?, ?, ?, ?, ?)";
-  db.query(sql, [name, lastname, tel, username, pwd, permission], (err, result) => {
-    if (err) {
-      res.send(err);
-      console.log(err);
-    } else {
-      res.json({ STATUS: "เพิ่มข้อมูลเสร็จสิ้น" });
+  db.query(
+    sql,
+    [name, lastname, tel, username, pwd, permission],
+    (err, result) => {
+      if (err) {
+        res.send(err);
+        console.log(err);
+      } else {
+        res.json({ STATUS: "เพิ่มข้อมูลเสร็จสิ้น" });
+      }
     }
-  });
+  );
 });
 
 app.get("/display_all_user", (req, res) => {
@@ -626,7 +638,7 @@ app.get("/certifi_rp/:month/:course", (req, res) => {
   on member.amphure=amphures.id
   INNER JOIN districts
   on member.district=districts.id
-  WHERE pass_fail = "ผ่าน" AND MONTH(reg_day) = ? AND course = ?
+  WHERE book_id != "" AND MONTH(reg_day) = ? AND course = ?
   ORDER BY reg_id ASC
   LIMIT ${offset}, ${pageSize};`;
 
@@ -691,21 +703,66 @@ app.put("/sum_score", (req, res) => {
   const profi_score = req.body.profi_score;
   const total_score = req.body.total_score;
   const pass_fail = req.body.pass_fail;
-  const sql = `UPDATE member SET kn_score = ?, profi_score = ?, sum_score = ?, pass_fail = ?
+  const sql = `UPDATE member SET kn_score = ?, profi_score = ?, sum_score = ?, pass_fail = ?, book_id = ?
   WHERE reg_id = ?`;
-
-  db.query(
-    sql,
-    [kn_score, profi_score, total_score, pass_fail, reg_id],
-    (err, result) => {
-      if (err) {
-        res.json({ status: "false" });
-        console.log(err);
-      } else {
-        res.json({ status: "true" });
+  const sql_book_id = "INSERT INTO book_id_value (id_values) VALUES (?)";
+  // const sql_permission = "SELECT sum_score FROM member WHERE reg_id = ?";
+  // const update_book = 'UPDATE member SET book_id =? WHERE reg_id = ?'
+  const text = "";
+  if(total_score > 69){
+    db.query(sql_book_id, text, (err, result_1) => {
+      function padWithLeadingZeros(num, totalLength) {
+        return String(num).padStart(totalLength, "0");
       }
-    }
-  );
+      const insertedId = result_1.insertId;
+      const last_book_id = padWithLeadingZeros(insertedId, 4);
+      db.query(
+        sql,
+        [kn_score, profi_score, total_score, pass_fail, last_book_id,reg_id],
+        (err, result) => {
+          if (err) {
+            res.json({ status: "false" });
+            console.log(err);
+          } else {
+            res.json({ status: "true" });
+          }
+        }
+      );
+    });
+  }else if(total_score >= 50 && total_score <= 69){
+    db.query(
+      sql,
+      [kn_score, profi_score, total_score, 'ผ่าน', '',reg_id],
+      (err, result) => {
+        if (err) {
+          res.json({ status: "false" });
+          console.log(err);
+        } else {
+          res.json({ status: "true" });
+        }
+      }
+    );
+  }
+ 
+
+  // db.query(sql_permission, [reg_id], (err, result_2) => {
+  //   console.log(result_2[0].sum_score);
+  //   if (result_2[0].sum_score > 69) {
+
+  //     // db.query(update_book, [last_book_id, reg_id], (err, result_3) => {
+  //     //   if(result_3){
+  //     //     res.send(result_3)
+  //     //     console.log(result_3)
+  //     //   }else{
+  //     //     // res.send(err)
+  //     //   }
+  //     // })
+
+  //   }else{
+  //     console.log('failed')
+  //     return false
+  //   }
+  // });
 });
 
 app.listen(PORT, () => console.log("Server is running on port 3000"));
